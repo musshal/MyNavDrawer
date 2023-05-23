@@ -1,6 +1,5 @@
 package com.dicoding.mynavdrawer
 
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
@@ -20,7 +19,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Divider
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,78 +27,47 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.dicoding.mynavdrawer.ui.theme.MyNavDrawerTheme
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyNavDrawerApp() {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val appState = rememberMyNavDrawerState()
 
     ModalNavigationDrawer(
-        drawerState = drawerState,
+        drawerState = appState.drawerState,
         drawerContent = {
             ModalDrawerSheet {
                 MyDrawerContent(
-                    onItemSelected = { title ->
-                        scope.launch { 
-                            val snackbarResult = snackbarHostState.showSnackbar(
-                                message = context.resources.getString(R.string.coming_soon, title),
-                                actionLabel = context.resources.getString(R.string.subscribe_question)
-                            )
-                            if (snackbarResult == SnackbarResult.ActionPerformed) {
-                                Toast.makeText(
-                                    context,
-                                    context.resources.getString(R.string.subscribed_info),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
+                    onItemSelected = appState::onItemSelected
                 )
                 BackPressHandler {
-                    if (drawerState.isOpen) {
-                        scope.launch {
-                            drawerState.close()
-                        }
-                    }
+                    appState.onBackPress()
                 }
             }
         },
         content = {
             Scaffold(
-                snackbarHost = { SnackbarHost(snackbarHostState) },
+                snackbarHost = { SnackbarHost(appState.snackBarHostState) },
                 topBar = {
                     MyTopBar(
-                        onMenuClick = {
-                            scope.launch {
-                                drawerState.open()
-                            }
-                        }
+                        onMenuClick = appState::onMenuClick
                     )
                 },
             ) { paddingValues ->
